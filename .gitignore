@@ -167,3 +167,5 @@ dist
 .pnp.\*
 
 vercel.json
+
+.env
