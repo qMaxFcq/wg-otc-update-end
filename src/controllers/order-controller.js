@@ -68,14 +68,42 @@ exports.editOrder = async (req, res) => {
 
     const { side, symbol, price, amount, customer } = req.body;
     const cost = amount * price;
-    await db.query(
-      "UPDATE order_temp SET side=?, symbol=?, price=?, amount=?, cost=?, customer=? WHERE id = ?",
-      [side, symbol, price, amount, cost, customer, orderId]
+
+    // ดึงค่า completed_at ปัจจุบัน
+    const [currentCompletedAt] = await db.query(
+      "SELECT completed_at FROM order_temp WHERE id = ?",
+      [orderId]
     );
+
+    if (currentCompletedAt && currentCompletedAt.length > 0) {
+      // ดึงค่า completed_at เดิมและวินาที
+      const oldCompletedAt = currentCompletedAt[0].completed_at;
+      const newCompletedAt = new Date(oldCompletedAt.getTime() + 1000);
+
+      // อัปเดตค่า completed_at ในฐานข้อมูล
+      await db.query(
+        "UPDATE order_temp SET side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? WHERE id = ?",
+        [side, symbol, price, amount, cost, customer, newCompletedAt, orderId]
+      );
+    }
 
     res.status(200).json({ message: "แก้ไขคำสั่งสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการแก้ไขคำสั่ง" });
+  }
+};
+
+exports.getOrderHistory = async (req, res) => {
+  try {
+    const db = await connectToDatabase();
+    const [rows, fields] = await db.execute("SELECT * FROM order_temp");
+    db.end();
+    res.json({ data: rows });
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
   }
 };
