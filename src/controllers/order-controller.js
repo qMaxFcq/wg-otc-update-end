@@ -94,10 +94,67 @@ exports.editOrder = async (req, res) => {
   }
 };
 
+// exports.getOrderHistory = async (req, res) => {
+//   try {
+//     const db = await connectToDatabase();
+//     const [rows, fields] = await db.execute(
+//       "SELECT * FROM order_temp ORDER BY id DESC LIMIT 10"
+//     );
+//     db.end();
+//     res.json({ data: rows });
+//   } catch (error) {
+//     console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+//   }
+// };
+
+// exports.getOrderHistory = async (req, res) => {
+//   try {
+//     const currentDateTime = new Date();
+//     const nowDate = currentDateTime.toISOString().split("T")[0];
+//     const db = await connectToDatabase();
+
+//     const limit = 10;
+//     const page = req.query.page || 1;
+//     const offset = (page - 1) * limit;
+
+//     const [rows, fields] = await db.execute(
+//       `SELECT * FROM order_temp WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
+//       [nowDate]
+//     );
+
+//     db.end();
+//     res.json({ data: rows });
+//   } catch (error) {
+//     console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+//   }
+// };
+
 exports.getOrderHistory = async (req, res) => {
   try {
+    let selectedDate = req.query.selectedDate;
     const db = await connectToDatabase();
-    const [rows, fields] = await db.execute("SELECT * FROM order_temp");
+
+    const limit = 10;
+    const page = req.query.page || 1;
+    const offset = (page - 1) * limit;
+
+    if (!selectedDate || typeof selectedDate === "undefined") {
+      // ถ้าไม่ได้รับวันที่จากผู้ใช้ ให้ใช้วันปัจจุบัน
+      const currentDateTime = new Date();
+      selectedDate = currentDateTime.toISOString().split("T")[0];
+    }
+
+    const [rows, fields] = await db.execute(
+      `SELECT * FROM order_temp WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
+      [selectedDate]
+    );
+
     db.end();
     res.json({ data: rows });
   } catch (error) {
@@ -107,3 +164,5 @@ exports.getOrderHistory = async (req, res) => {
       .json({ success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
   }
 };
+
+exports.getOrderHistoryWithPage = async (req, res) => {};
