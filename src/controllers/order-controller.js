@@ -97,23 +97,19 @@ exports.editOrder = async (req, res) => {
 exports.getOrderHistory = async (req, res) => {
   try {
     let selectedDate = req.query.selectedDate;
-    // console.log(selectedDate)
+    if (selectedDate) {
+      selectedDate = selectedDate.split("/").reverse().join("-");
+    } else {
+      selectedDate = new Date().toISOString().split("T")[0];
+    }
 
     const limit = 10;
-    const page = parseInt(req.query.page) || 1;
-    if (isNaN(page) || page < 1) {
-      page = 1;
-    }
+    let page = parseInt(req.query.page) || 1;
+    page = isNaN(page) || page < 1 ? 1 : page;
     const offset = (page - 1) * limit;
-    console.log(offset);
-
-    if (!selectedDate || typeof selectedDate === "undefined") {
-      const currentDateTime = new Date();
-      selectedDate = currentDateTime.toISOString().split("T")[0];
-    }
 
     const db = await connectToDatabase();
-    const [rows, fields] = await db.execute(
+    const [rows] = await db.execute(
       `SELECT * FROM order_temp WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
       [selectedDate]
     );
