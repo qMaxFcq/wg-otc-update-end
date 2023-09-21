@@ -4,6 +4,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const app = express();
 const Order = require("./routes/order");
+const Login = require("./routes/login");
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -14,8 +15,8 @@ app.use(limiter);
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+app.use("/", Login);
 app.use("/order", Order);
-
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -1,5 +1,6 @@
+require("dotenv").config();
 const mysql = require("mysql2/promise");
-const { v4: uuidv4 } = require("uuid");
+const jwt = require("jsonwebtoken");
 
 async function connectToDatabase() {
   const db = await mysql.createConnection({
@@ -26,14 +27,21 @@ exports.addNewOrder = async (req, res) => {
   //   console.log("เข้ามา");
   try {
     const { side, symbol, price, amount, customer } = req.body;
+    const authHeader = req.headers["authorization"];
+    let authToken = "";
+    if (authHeader) {
+      authToken = authHeader.split(" ")[1];
+    }
+    const user = jwt.verify(authToken, process.env.JWT_SECRET_KEY);
     const db = await connectToDatabase();
     const currentDate = new Date();
     const exchange_order_id = formatDate(currentDate);
     const shop_id = 2;
     const cost = amount * price;
     const order_status = "COMPLETED";
+
     const sql =
-      "INSERT INTO order_temp (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id,order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)";
+      "INSERT INTO order_temp (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id,order_status,add_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)";
     const [result] = await db.query(sql, [
       shop_id,
       side,
@@ -44,6 +52,7 @@ exports.addNewOrder = async (req, res) => {
       customer,
       exchange_order_id,
       order_status,
+      user.userName,
     ]);
 
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
@@ -123,5 +132,3 @@ exports.getOrderHistory = async (req, res) => {
       .json({ success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
   }
 };
-
-exports.getOrderHistoryWithPage = async (req, res) => {};
