@@ -24,15 +24,9 @@ function formatDate(date) {
 }
 
 exports.addNewOrder = async (req, res) => {
-  //   console.log("เข้ามา");
+  // console.log(req.user[0].username);
   try {
     const { side, symbol, price, amount, customer } = req.body;
-    const authHeader = req.headers["authorization"];
-    let authToken = "";
-    if (authHeader) {
-      authToken = authHeader.split(" ")[1];
-    }
-    const user = jwt.verify(authToken, process.env.JWT_SECRET_KEY);
     const db = await connectToDatabase();
     const currentDate = new Date();
     const exchange_order_id = formatDate(currentDate);
@@ -41,7 +35,7 @@ exports.addNewOrder = async (req, res) => {
     const order_status = "COMPLETED";
 
     const sql =
-      "INSERT INTO order_temp (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id,order_status,add_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)";
+      "INSERT INTO order_temp (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, add_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const [result] = await db.query(sql, [
       shop_id,
       side,
@@ -52,7 +46,7 @@ exports.addNewOrder = async (req, res) => {
       customer,
       exchange_order_id,
       order_status,
-      user.userName,
+      req.user[0].username,
     ]);
 
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
@@ -91,8 +85,19 @@ exports.editOrder = async (req, res) => {
 
       // อัปเดตค่า completed_at ในฐานข้อมูล
       await db.query(
-        "UPDATE order_temp SET side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? WHERE id = ?",
-        [side, symbol, price, amount, cost, customer, newCompletedAt, orderId]
+        "UPDATE order_temp SET side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? , edit_by=? WHERE id = ?",
+
+        [
+          side,
+          symbol,
+          price,
+          amount,
+          cost,
+          customer,
+          newCompletedAt,
+          req.user[0].username,
+          orderId,
+        ]
       );
     }
 

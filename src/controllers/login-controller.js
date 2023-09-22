@@ -60,21 +60,4 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.userDetail = async (req, res) => {
-  try {
-    const authHeader = req.headers["authorization"];
-    let authToken = "";
-    if (authHeader) {
-      authToken = authHeader.split(" ")[1];
-    }
 
-    const user = jwt.verify(authToken, process.env.JWT_SECRET_KEY);
-    const db = await connectToDatabase();
-    const [results] = await db.query("SELECT * from user");
-    res.json({
-      user: results,
-    });
-  } catch {
-    console.log("first");
-  }
-};
