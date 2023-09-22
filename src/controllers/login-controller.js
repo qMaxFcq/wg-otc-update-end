@@ -59,5 +59,3 @@ exports.login = async (req, res) => {
     console.error("Error:", error);
   }
 };
-
-
