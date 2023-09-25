@@ -26,6 +26,7 @@ exports.register = async (req, res) => {
     };
     const db = await connectToDatabase();
     const [results] = await db.query("INSERT INTO user SET ?", userData);
+    await db.end();
     res.json({ message: "insert ok", results });
   } catch (error) {
     console.error("Error:", error);
@@ -61,6 +62,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign({ email, userName }, process.env.JWT_SECRET_KEY, {
       expiresIn: "1d",
     });
+    await db.end();
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
     // console.error("Error:", error);

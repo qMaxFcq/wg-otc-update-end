@@ -27,6 +27,7 @@ module.exports = async (req, res, next) => {
       "SELECT * from user WHERE email = ?",
       user.email
     );
+    await db.end();
 
     req.user = userDetail[0];
     next();

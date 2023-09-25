@@ -48,7 +48,7 @@ exports.addNewOrder = async (req, res) => {
       order_status,
       req.user[0].username,
     ]);
-
+    await db.end();
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -101,6 +101,7 @@ exports.editOrder = async (req, res) => {
       );
     }
 
+    await db.end();
     res.status(200).json({ message: "แก้ไขคำสั่งสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
