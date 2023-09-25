@@ -42,20 +42,47 @@ exports.login = async (req, res) => {
       email
     );
     const userData = results[0];
+
+    if (!userData || !userData.username) {
+      return res.status(401).json({
+        message: "User not found or missing username.",
+      });
+    }
+
     const userName = userData.username;
     const comparePassword = await bcrypt.compare(password, userData.password);
 
     if (!comparePassword) {
-      return res.json({
-        message: "login fail...",
+      return res.status(401).json({
+        message: "Login failed.",
       });
     }
 
     const token = jwt.sign({ email, userName }, process.env.JWT_SECRET_KEY, {
       expiresIn: "1d",
     });
-    res.json({ message: "login done", token });
+    res.status(200).json({ message: "Login successful", token });
   } catch (error) {
-    console.error("Error:", error);
+    // console.error("Error:", error);
+    res.status(500).json({
+      message: "An error occurred while processing your request.",
+    });
+  }
+};
+
+exports.userProflie = async (req, res) => {
+  try {
+    const user = req.user[0];
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found",
+      });
+    }
+    const { email, username } = user;
+    res.status(200).json({ email, username });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error From UserProfile",
+    });
   }
 };
