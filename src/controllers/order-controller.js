@@ -48,11 +48,10 @@ function formatDate(date) {
 exports.addNewOrder = async (req, res) => {
   // console.log(req.user[0].username);
   try {
-    const { side, symbol, price, amount, customer } = req.body;
+    const { side, symbol, price, amount, shop_id, customer } = req.body;
     const db_test = await connectToDatabaseTest();
     const currentDate = new Date();
     const exchange_order_id = formatDate(currentDate);
-    const shop_id = 2;
     const cost = amount * price;
     const order_status = "COMPLETED";
 
@@ -91,7 +90,7 @@ exports.editOrder = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบคำสั่งที่ต้องการแก้ไข" });
     }
 
-    const { side, symbol, price, amount, customer } = req.body;
+    const { side, symbol, price, amount, customer, shop_id } = req.body;
     const cost = amount * price;
 
     // ดึงค่า completed_at ปัจจุบัน
@@ -107,9 +106,10 @@ exports.editOrder = async (req, res) => {
 
       // อัปเดตค่า completed_at ในฐานข้อมูล
       await db_test.query(
-        "UPDATE order_temp SET side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? , edit_by=? WHERE id = ?",
+        "UPDATE order_temp SET shop_id=?, side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? , edit_by=? WHERE id = ?",
 
         [
+          shop_id,
           side,
           symbol,
           price,
@@ -131,6 +131,100 @@ exports.editOrder = async (req, res) => {
   }
 };
 
+// exports.getOrderHistory = async (req, res) => {
+//   try {
+//     let selectedDate = req.query.selectedDate;
+//     if (selectedDate) {
+//       selectedDate = selectedDate.split("/").reverse().join("-");
+//     } else {
+//       selectedDate = new Date().toISOString().split("T")[0];
+//     }
+
+//     const limit = 10;
+//     let page = parseInt(req.query.page) || 1;
+//     page = isNaN(page) || page < 1 ? 1 : page;
+//     const offset = (page - 1) * limit;
+
+//     const db_test = await connectToDatabaseTest();
+//     const [rows] = await db_test.execute(
+//       `SELECT * FROM order_temp WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
+//       [selectedDate]
+//     );
+
+//     db_test.end();
+//     res.json({ data: rows });
+//   } catch (error) {
+//     console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
+//     });
+//   }
+// };
+
+// exports.getWithdrawDepositAllCoin = async (req, res) => {
+//   try {
+//     let selectedDate = req.query.selectedDate;
+//     if (selectedDate) {
+//       selectedDate = selectedDate.split("/").reverse().join("-");
+//     } else {
+//       selectedDate = new Date().toISOString().split("T")[0];
+//     }
+
+//     console.log(selectedDate);
+
+//     const db_test = await connectToDatabaseTest();
+//     const [allHistory] = await db_test.execute(
+//       "SELECT * FROM order_temp WHERE DATE(created_time) = ?",
+//       [selectedDate]
+//     );
+//     db_test.end();
+
+//     // สร้างออบเจกต์เพื่อเก็บยอดรวมแยกตามเหรียญและฝ่าย
+//     const totalsByCoin = {
+//       USDT_THB: { SELL: 0, BUY: 0 },
+//       BTC_THB: { SELL: 0, BUY: 0 },
+//       ETH_THB: { SELL: 0, BUY: 0 },
+//       BNB_THB: { SELL: 0, BUY: 0 },
+//     };
+
+//     allHistory.forEach((record) => {
+//       const isSellSymbol =
+//         ["USDT_THB", "BTC_THB", "ETH_THB", "BNB_THB"].includes(record.symbol) &&
+//         record.side === "SELL";
+//       const isBuySymbol =
+//         ["USDT_THB", "BTC_THB", "ETH_THB", "BNB_THB"].includes(record.symbol) &&
+//         record.side === "BUY";
+
+//       if (isSellSymbol || isBuySymbol) {
+//         const coin = record.symbol;
+//         const amount = parseFloat(record.amount);
+
+//         if (record.side === "SELL") {
+//           totalsByCoin[coin].SELL += amount;
+//         } else if (record.side === "BUY") {
+//           totalsByCoin[coin].BUY += amount;
+//         }
+//       }
+//     });
+
+//     const db = await connectToDatabase();
+//     const [rows_wow] = await db.execute(
+//       "SELECT * FROM tally_wid_depo WHERE DATE(created_time) = ?",
+//       [selectedDate]
+//     );
+//     db.end();
+
+//     res.status(200).json({ totalsByCoin, rows_wow });
+//   } catch (error) {
+//     console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: "เกิดข้อผิดพลาดในการดึงข้อมูล getWithdrawDepositAllCoin",
+//     });
+//   }
+// };
+
 exports.getOrderHistory = async (req, res) => {
   try {
     let selectedDate = req.query.selectedDate;
@@ -146,41 +240,22 @@ exports.getOrderHistory = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const db_test = await connectToDatabaseTest();
-    const [rows] = await db_test.execute(
+
+    // ดึงประวัติออเดอร์ทั้งหมด
+    const [orderHistory] = await db_test.execute(
       `SELECT * FROM order_temp WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
       [selectedDate]
     );
 
-    db_test.end();
-    res.json({ data: rows });
-  } catch (error) {
-    console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
-    res.status(500).json({
-      success: false,
-      error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
-    });
-  }
-};
-
-exports.getWithdrawDepositAllCoin = async (req, res) => {
-  try {
-    let selectedDate = req.query.selectedDate;
-    if (selectedDate) {
-      selectedDate = selectedDate.split("/").reverse().join("-");
-    } else {
-      selectedDate = new Date().toISOString().split("T")[0];
-    }
-
-    console.log(selectedDate);
-
-    const db_test = await connectToDatabaseTest();
-    const [allHistory] = await db_test.execute(
+    // ดึงออเดอร์เพื่อคำนวณ amount
+    const [withdrawDepositHistory] = await db_test.execute(
       "SELECT * FROM order_temp WHERE DATE(created_time) = ?",
       [selectedDate]
     );
+
     db_test.end();
 
-    // สร้างออบเจกต์เพื่อเก็บยอดรวมแยกตามเหรียญและฝ่าย
+    // สร้างโครง
     const totalsByCoin = {
       USDT_THB: { SELL: 0, BUY: 0 },
       BTC_THB: { SELL: 0, BUY: 0 },
@@ -188,7 +263,8 @@ exports.getWithdrawDepositAllCoin = async (req, res) => {
       BNB_THB: { SELL: 0, BUY: 0 },
     };
 
-    allHistory.forEach((record) => {
+    // ดึงออเดอร์และ amount จากการเลือกวันมารวมกัน
+    withdrawDepositHistory.forEach((record) => {
       const isSellSymbol =
         ["USDT_THB", "BTC_THB", "ETH_THB", "BNB_THB"].includes(record.symbol) &&
         record.side === "SELL";
@@ -209,18 +285,26 @@ exports.getWithdrawDepositAllCoin = async (req, res) => {
     });
 
     const db = await connectToDatabase();
-    const [rows_wow] = await db.execute(
+
+    // ดึงยอดการฝาก ถอน จาก api
+    const [additionalData] = await db.execute(
       "SELECT * FROM tally_wid_depo WHERE DATE(created_time) = ?",
       [selectedDate]
     );
+
     db.end();
 
-    res.status(200).json({ totalsByCoin, rows_wow });
+    res.status(200).json({
+      data: orderHistory,
+      withdrawDepositHistory,
+      totalsByCoin,
+      additionalData,
+    });
   } catch (error) {
     console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
     res.status(500).json({
       success: false,
-      error: "เกิดข้อผิดพลาดในการดึงข้อมูล getWithdrawDepositAllCoin",
+      error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
     });
   }
 };
