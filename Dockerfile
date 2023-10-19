@@ -17,4 +17,4 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-CMD ["node", "src/index.js"]
+CMD ["node", "src/main.js"]
