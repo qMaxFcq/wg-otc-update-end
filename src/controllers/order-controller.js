@@ -154,7 +154,7 @@ exports.getOrderHistory = async (req, res) => {
       [selectedDate]
     );
 
-    // ดึงออเดอร์เพื่อคำนวณ amount
+    // ดึงออเดอร์เพื่อคำนวณ amountt
     const [withdrawDepositHistory] = await db_test.execute(
       "SELECT * FROM `order` WHERE DATE(created_time) = ?",
       [selectedDate]
