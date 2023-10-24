@@ -131,7 +131,6 @@ exports.editOrder = async (req, res) => {
   }
 };
 
-
 exports.getOrderHistory = async (req, res) => {
   try {
     let selectedDate = req.query.selectedDate;
@@ -148,15 +147,13 @@ exports.getOrderHistory = async (req, res) => {
 
     const db_test = await connectToDatabase();
 
-    // ดึงประวัติออเดอร์ทั้งหมด
     const [orderHistory] = await db_test.execute(
-      `SELECT * FROM \`order\` WHERE DATE(created_time) = ? LIMIT ${limit} OFFSET ${offset}`,
+      `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4) LIMIT ${limit} OFFSET ${offset}`,
       [selectedDate]
     );
 
-    // ดึงออเดอร์เพื่อคำนวณ amountt
     const [withdrawDepositHistory] = await db_test.execute(
-      "SELECT * FROM `order` WHERE DATE(created_time) = ?",
+      "SELECT * FROM `order` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)",
       [selectedDate]
     );
 
