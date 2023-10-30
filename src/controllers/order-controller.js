@@ -56,7 +56,8 @@ exports.addNewOrder = async (req, res) => {
     const order_status = "COMPLETED";
 
     const sql =
-      "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, add_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, created_time, add_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
+
     const [result] = await db_test.query(sql, [
       shop_id,
       side,
