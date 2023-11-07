@@ -191,11 +191,14 @@ exports.getOrderHistory = async (req, res) => {
 
     const db = await connectToDatabase();
 
+
+
     // ดึงยอดการฝาก ถอน จาก api
     const [additionalData] = await db.execute(
-      "SELECT * FROM tally_wid_depo WHERE DATE(created_time) = ?",
+      "SELECT * FROM summary_witd_depo WHERE DATE(date) = ?",
       [selectedDate]
     );
+
 
     db.end();
 
