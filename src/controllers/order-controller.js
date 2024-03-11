@@ -1,5 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql2/promise");
+const moment = require('moment');
+
 const jwt = require("jsonwebtoken");
 
 async function connectToDatabaseTest() {
@@ -77,6 +79,65 @@ exports.addNewOrder = async (req, res) => {
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
   }
 };
+
+exports.addNewOrderArray = async (req, res) => {
+
+  try {
+    const orders = req.body;
+    const db_test = await connectToDatabase();
+    const orderValues = [];
+    const id_is_com = req.body[0].id
+
+    // Iterate through each order and format the values
+    orders.forEach((order) => {
+      const {
+        side,
+        symbol,
+        price,
+        amount,
+        shop_id,
+        customer,
+        created_time
+      } = order;
+
+      const currentDate = new Date();
+      const exchange_order_id = formatDate(currentDate);
+      const cost = amount * price;
+      const order_status = "COMPLETED";
+      const convertedSide = side === 'deposit' ? 'BUY' : side === 'withdraw' ? 'SELL' : side;
+      
+
+      orderValues.push([
+        shop_id,
+        convertedSide, 
+        symbol,
+        price,
+        amount,
+        cost,
+        customer,
+        exchange_order_id,
+        order_status,
+        created_time,
+        req.user[0].username,
+      ]);
+    });
+
+    const sql =
+      "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, created_time, add_by) VALUES ?";
+
+    const sql_update = `UPDATE withd_depo SET is_complete = 1 WHERE id = ${id_is_com}`;
+    const [result] = await db_test.query(sql, [orderValues]);
+    const result_is_update_com = await db_test.query(sql_update)
+    await db_test.end();
+
+    res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาด:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
+  }
+};
+
+
 
 exports.editOrder = async (req, res) => {
   try {
@@ -214,5 +275,25 @@ exports.getOrderHistory = async (req, res) => {
       success: false,
       error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
     });
+  }
+};
+
+exports.getHistoryWidDepo = async (req, res) => {
+  try {
+    const db_test = await connectToDatabase();
+    const [historyWidDepo] = await db_test.execute(
+      `SELECT * FROM withd_depo WHERE is_complete = 0 AND DATE(completed_at) = CURDATE()`
+    );
+
+    // แปลง completed_at เป็นเวลาไทย
+    const historyWidDepoWithThaiTime = historyWidDepo.map(item => ({
+      ...item,
+      completed_at: moment(item.completed_at).format('YYYY-MM-DD HH:mm:ss'),
+    }));
+
+    res.status(200).json({ data: historyWidDepoWithThaiTime });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
