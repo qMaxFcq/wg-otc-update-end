@@ -157,7 +157,7 @@ exports.editOrder = async (req, res) => {
     const { side, symbol, price, amount, customer, shop_id } = req.body;
     const cost = amount * price;
 
-    // ดึงค่า completed_at ปัจจุบัน
+    // ดึงค่า completed_at ปัจจุบันน
     const [currentCompletedAt] = await db_test.query(
       "SELECT completed_at FROM `order` WHERE id = ?",
       [orderId]
