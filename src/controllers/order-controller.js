@@ -72,7 +72,7 @@ exports.addNewOrder = async (req, res) => {
       order_status,
       req.user[0].username,
     ]);
-    await db_test.end();
+    await db_test.close();
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -130,7 +130,7 @@ exports.addNewOrderArray = async (req, res) => {
     const sql_update = `UPDATE withd_depo SET is_complete = 1 WHERE id = ${id_is_com}`;
     const [result] = await db_test.query(sql, [orderValues]);
     const result_is_update_com = await db_test.query(sql_update)
-    await db_test.end();
+    await db_test.close();
 
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
@@ -187,7 +187,7 @@ exports.editOrder = async (req, res) => {
       );
     }
 
-    await db_test.end();
+    await db_test.close();
     res.status(200).json({ message: "แก้ไขคำสั่งสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -221,7 +221,7 @@ exports.getOrderHistory = async (req, res) => {
       [selectedDate]
     );
 
-    db_test.end();
+    db_test.close();
 
     // สร้างโครง
     const totalsByCoin = {
@@ -263,7 +263,7 @@ exports.getOrderHistory = async (req, res) => {
     );
 
 
-    db.end();
+    db.close();
 
     res.status(200).json({
       data: orderHistory,
