@@ -105,12 +105,14 @@ exports.addNewOrderArray = async (req, res) => {
       const cost = amount * price;
       const order_status = "COMPLETED";
       const convertedSide = side === 'deposit' ? 'BUY' : side === 'withdraw' ? 'SELL' : side;
+      const convertedShop = shop_id === 1 ? 2 : shop_id === 3 ? 4 : shop_id;
+      const convertedSymbol = symbol === 2 ? "USDT_THB" : "";
       
 
       orderValues.push([
-        shop_id,
+        convertedShop,
         convertedSide, 
-        symbol,
+        convertedSymbol,
         price,
         amount,
         cost,
@@ -210,7 +212,7 @@ exports.getOrderHistory = async (req, res) => {
     const db_test = await connectToDatabase();
 
     const [orderHistory] = await db_test.execute(
-      `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4) LIMIT ${limit} OFFSET ${offset}`,
+      `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)  AND customer != 'FEES' LIMIT ${limit} OFFSET ${offset}`,
       [selectedDate]
     );
 
