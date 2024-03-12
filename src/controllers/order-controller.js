@@ -4,38 +4,37 @@ const moment = require('moment');
 
 const jwt = require("jsonwebtoken");
 
-async function connectToDatabaseTest() {
-  const db_test = await mysql.createConnection({
-    host: process.env.DB_HOST_NEW,
-    user: process.env.DB_USERNAME_NEW,
-    password: process.env.DB_PASSWORD_NEW,
-    database: process.env.DB_NAME_NEW,
-  });
+// async function connectToDatabaseTest() {
+//   const db_test = await mysql.createConnection({
+//     host: process.env.DB_HOST_NEW,
+//     user: process.env.DB_USERNAME_NEW,
+//     password: process.env.DB_PASSWORD_NEW,
+//     database: process.env.DB_NAME_NEW,
+//   });
 
-  return db_test;
-}
+//   return db_test;
+// }
 
-async function connectToDatabase() {
-  const db = await mysql.createConnection({
+ 
+const db_test = mysql.createPool({
+    connectionLimit : 5,
     host: process.env.DB_HOST_NEW,
     user: process.env.DB_USERNAME_NEW,
     password: process.env.DB_PASSWORD_NEW,
     database: process.env.DB_NAME_NEW_2,
   });
 
-  return db;
-}
 
-async function connectToDatabaseWG() {
-  const db_wg = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  });
+// async function connectToDatabaseWG() {
+//   const db_wg = await mysql.createConnection({
+//     host: process.env.DB_HOST,
+//     user: process.env.DB_USERNAME,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_NAME,
+//   });
 
-  return db_wg;
-}
+//   return db_wg;
+// }
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -51,7 +50,7 @@ exports.addNewOrder = async (req, res) => {
   // console.log(req.user[0].username);
   try {
     const { side, symbol, price, amount, shop_id, customer } = req.body;
-    const db_test = await connectToDatabase();
+    // const db_test = await connectToDatabase();
     const currentDate = new Date();
     const exchange_order_id = formatDate(currentDate);
     const cost = amount * price;
@@ -72,11 +71,13 @@ exports.addNewOrder = async (req, res) => {
       order_status,
       req.user[0].username,
     ]);
-    await db_test.close();
+    
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
+  } finally {
+    await db_test.releaseConnection();
   }
 };
 
@@ -84,7 +85,7 @@ exports.addNewOrderArray = async (req, res) => {
 
   try {
     const orders = req.body;
-    const db_test = await connectToDatabase();
+    // const db_test = await connectToDatabase();
     const orderValues = [];
     const id_is_com = req.body[0].id
 
@@ -130,12 +131,13 @@ exports.addNewOrderArray = async (req, res) => {
     const sql_update = `UPDATE withd_depo SET is_complete = 1 WHERE id = ${id_is_com}`;
     const [result] = await db_test.query(sql, [orderValues]);
     const result_is_update_com = await db_test.query(sql_update)
-    await db_test.close();
 
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
+  } finally {
+    await db_test.releaseConnection()
   }
 };
 
@@ -144,7 +146,7 @@ exports.addNewOrderArray = async (req, res) => {
 exports.editOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const db_test = await connectToDatabase();
+    // const db_test = await connectToDatabase();
     const [existingOrder] = await db_test.query(
       "SELECT * FROM `order` WHERE id = ?",
       [orderId]
@@ -187,7 +189,7 @@ exports.editOrder = async (req, res) => {
       );
     }
 
-    await db_test.close();
+    await db_test.releaseConnection()
     res.status(200).json({ message: "แก้ไขคำสั่งสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -209,7 +211,7 @@ exports.getOrderHistory = async (req, res) => {
     page = isNaN(page) || page < 1 ? 1 : page;
     const offset = (page - 1) * limit;
 
-    const db_test = await connectToDatabase();
+    // const db_test = await connectToDatabase();
 
     const [orderHistory] = await db_test.execute(
       `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)  AND customer != 'FEES' LIMIT ${limit} OFFSET ${offset}`,
@@ -221,7 +223,7 @@ exports.getOrderHistory = async (req, res) => {
       [selectedDate]
     );
 
-    db_test.close();
+    db_test.releaseConnection()
 
     // สร้างโครง
     const totalsByCoin = {
@@ -252,18 +254,18 @@ exports.getOrderHistory = async (req, res) => {
       }
     });
 
-    const db = await connectToDatabase();
+    // const db = await connectToDatabase();
 
 
 
     // ดึงยอดการฝาก ถอน จาก api
-    const [additionalData] = await db.execute(
+    const [additionalData] = await db_test.execute(
       "SELECT * FROM summary_witd_depo WHERE DATE(date) = ?",
       [selectedDate]
     );
 
 
-    db.close();
+    db_test.releaseConnection()
 
     res.status(200).json({
       data: orderHistory,
@@ -282,7 +284,7 @@ exports.getOrderHistory = async (req, res) => {
 
 exports.getHistoryWidDepo = async (req, res) => {
   try {
-    const db_test = await connectToDatabase();
+    // const db_test = await connectToDatabase();
     const [historyWidDepo] = await db_test.execute(
       `SELECT * FROM withd_depo WHERE is_complete = 0 AND DATE(completed_at) = CURDATE()`
     );
@@ -294,6 +296,8 @@ exports.getHistoryWidDepo = async (req, res) => {
     }));
 
     res.status(200).json({ data: historyWidDepoWithThaiTime });
+
+    await db_test.releaseConnection()
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
