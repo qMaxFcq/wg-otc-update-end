@@ -170,25 +170,37 @@ exports.editOrder = async (req, res) => {
 };
 
 exports.getOrderHistory = async (req, res) => {
+
   try {
     let selectedDate = req.query.selectedDate;
+    let selectedShopId = req.query.shopId
     if (selectedDate) {
       selectedDate = selectedDate.split("/").reverse().join("-");
     } else {
       selectedDate = new Date().toISOString().split("T")[0];
     }
 
+    if (selectedShopId) {
+      thisShopP2P = selectedShopId
+    } else {
+      thisShopP2P = 2
+    }
+
+
     const limit = 10;
     let page = parseInt(req.query.page) || 1;
     page = isNaN(page) || page < 1 ? 1 : page;
     const offset = (page - 1) * limit;
-
-    // const db_test = await connectToDatabase();
-
-    const [orderHistory] = await db_test.query(
-      `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)  AND customer != 'FEES' LIMIT ${limit} OFFSET ${offset}`,
-      [selectedDate]
-    );
+    const sqlQuery = `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id = ? AND customer != 'FEES' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`;
+    
+    const queryParams = [selectedDate, selectedShopId];
+    const [orderHistory] = await db_test.query(sqlQuery, queryParams);
+    
+    const historyOrderConthai = orderHistory.map(item => ({
+      ...item,
+      created_time: moment(item.created_time).format('YYYY-MM-DD HH:mm:ss'),
+      completed_at: moment(item.completed_at).format('YYYY-MM-DD HH:mm:ss'),
+    }));
 
     const [withdrawDepositHistory] = await db_test.query(
       "SELECT * FROM `order` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)",
@@ -233,7 +245,7 @@ exports.getOrderHistory = async (req, res) => {
     );
 
     res.status(200).json({
-      data: orderHistory,
+      data: historyOrderConthai,
       withdrawDepositHistory,
       totalsByCoin,
       additionalData,
