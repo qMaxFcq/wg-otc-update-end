@@ -3,7 +3,7 @@ const mysql = require("mysql2/promise");
 const moment = require('moment');
 
 const jwt = require("jsonwebtoken");
-
+ 
 const db_test = mysql.createPool({
     connectionLimit : 5,
     host: process.env.DB_HOST_NEW,
@@ -62,11 +62,9 @@ exports.addNewOrderArray = async (req, res) => {
 
   try {
     const orders = req.body;
-    // const db_test = await connectToDatabase();
     const orderValues = [];
     const id_is_com = req.body[0].id
 
-    // Iterate through each order and format the values
     orders.forEach((order) => {
       const {
         side,
@@ -118,12 +116,9 @@ exports.addNewOrderArray = async (req, res) => {
   }
 };
 
-
-
 exports.editOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
-    // const db_test = await connectToDatabase();
     const [existingOrder] = await db_test.query(
       "SELECT * FROM `order` WHERE id = ?",
       [orderId]
@@ -190,12 +185,12 @@ exports.getOrderHistory = async (req, res) => {
 
     // const db_test = await connectToDatabase();
 
-    const [orderHistory] = await db_test.execute(
+    const [orderHistory] = await db_test.query(
       `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)  AND customer != 'FEES' LIMIT ${limit} OFFSET ${offset}`,
       [selectedDate]
     );
 
-    const [withdrawDepositHistory] = await db_test.execute(
+    const [withdrawDepositHistory] = await db_test.query(
       "SELECT * FROM `order` WHERE DATE(created_time) = ? AND shop_id IN (2, 4)",
       [selectedDate]
     );
@@ -231,18 +226,11 @@ exports.getOrderHistory = async (req, res) => {
       }
     });
 
-    // const db = await connectToDatabase();
-
-
-
     // ดึงยอดการฝาก ถอน จาก api
-    const [additionalData] = await db_test.execute(
+    const [additionalData] = await db_test.query(
       "SELECT * FROM summary_witd_depo WHERE DATE(date) = ?",
       [selectedDate]
     );
-
-
-    db_test.releaseConnection()
 
     res.status(200).json({
       data: orderHistory,
@@ -256,13 +244,14 @@ exports.getOrderHistory = async (req, res) => {
       success: false,
       error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
     });
+  } finally {
+    db_test.releaseConnection()
   }
 };
 
 exports.getHistoryWidDepo = async (req, res) => {
   try {
-    // const db_test = await connectToDatabase();
-    const [historyWidDepo] = await db_test.execute(
+    const [historyWidDepo] = await db_test.query(
       `SELECT * FROM withd_depo WHERE is_complete = 0 AND DATE(completed_at) = CURDATE()`
     );
 
@@ -274,9 +263,10 @@ exports.getHistoryWidDepo = async (req, res) => {
 
     res.status(200).json({ data: historyWidDepoWithThaiTime });
 
-    await db_test.releaseConnection()
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    await db_test.releaseConnection()
   }
 };
