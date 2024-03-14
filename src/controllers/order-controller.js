@@ -4,18 +4,6 @@ const moment = require('moment');
 
 const jwt = require("jsonwebtoken");
 
-// async function connectToDatabaseTest() {
-//   const db_test = await mysql.createConnection({
-//     host: process.env.DB_HOST_NEW,
-//     user: process.env.DB_USERNAME_NEW,
-//     password: process.env.DB_PASSWORD_NEW,
-//     database: process.env.DB_NAME_NEW,
-//   });
-
-//   return db_test;
-// }
-
- 
 const db_test = mysql.createPool({
     connectionLimit : 5,
     host: process.env.DB_HOST_NEW,
@@ -24,17 +12,6 @@ const db_test = mysql.createPool({
     database: process.env.DB_NAME_NEW_2,
   });
 
-
-// async function connectToDatabaseWG() {
-//   const db_wg = await mysql.createConnection({
-//     host: process.env.DB_HOST,
-//     user: process.env.DB_USERNAME,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_NAME,
-//   });
-
-//   return db_wg;
-// }
 
 function formatDate(date) {
   const year = date.getFullYear();
