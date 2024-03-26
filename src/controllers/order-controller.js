@@ -143,7 +143,7 @@ exports.editOrder = async (req, res) => {
       const newCompletedAt = new Date(oldCompletedAt.getTime() + 1000);
 
       // อัปเดตค่า completed_at ในฐานข้อมูล
-      await db_test.query(
+      const is_update = await db_test.query(
         "UPDATE `order` SET shop_id=?, side=?, symbol=?, price=?, amount=?, cost=?, customer=?, completed_at=? , edit_by=? WHERE id = ?",
 
         [
@@ -159,6 +159,11 @@ exports.editOrder = async (req, res) => {
           orderId,
         ]
       );
+
+      if (is_update){
+        await db_test.query("DELETE FROM `tally` WHERE completed_at >= ?",[oldCompletedAt])
+      }
+
     }
 
     await db_test.releaseConnection()

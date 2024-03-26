@@ -6,6 +6,7 @@ const app = express();
 const Order = require("./routes/order");
 const Login = require("./routes/login");
 const Authenticate = require("./middleware/authenticate");
+const Alert = require("./routes/alert");
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -16,8 +17,11 @@ app.use(limiter);
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+
 app.use("/", Login);
 app.use("/order", Authenticate, Order);
+app.use("/alertprice",Authenticate, Alert)
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
