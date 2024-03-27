@@ -88,10 +88,12 @@ exports.addNewOrderArray = async (req, res) => {
         let updatedSecond = parseInt(second) + index;
         secondIncrement++;
 
-        const updatedTime = `${year}-${month}-${day} ${hour}:${minute}:${updatedSecond.toString().padStart(2, '0')}.${microsecond}`;
+        const updatedTime = `${year}-${month}-${day} ${hour}:${minute}:${updatedSecond.toString().padStart(2, '0')}`;
 
         order.created_time = updatedTime;
-    }
+      }
+
+      // console.log(order)
     
       const currentDate = new Date();
       const exchange_order_id = formatDate(currentDate);
@@ -112,13 +114,14 @@ exports.addNewOrderArray = async (req, res) => {
         customer,
         exchange_order_id,
         order_status,
-        created_time,
+        order.created_time,
+        order.created_time,
         req.user[0].username,
       ]);
     });
 
     const sql =
-      "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, created_time, add_by) VALUES ?";
+      "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, created_time, completed_at, add_by) VALUES ?";
 
     const sql_update = `UPDATE withd_depo SET is_complete = 1 WHERE id = ${id_is_com}`;
     const [result] = await db_test.query(sql, [orderValues]);
