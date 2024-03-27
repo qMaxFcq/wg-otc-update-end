@@ -65,7 +65,9 @@ exports.addNewOrderArray = async (req, res) => {
     const orderValues = [];
     const id_is_com = req.body[0].id
 
-    orders.forEach((order) => {
+    let secondIncrement = 0;
+
+    orders.forEach((order,index) => {
       const {
         side,
         symbol,
@@ -76,6 +78,21 @@ exports.addNewOrderArray = async (req, res) => {
         created_time
       } = order;
 
+      if (index > 0) {
+        const [datePart, timePart] = created_time.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute, second] = timePart.split(':');
+        const [secondPart, microsecond] = second.split('.');
+
+        // เพิ่มวินาที
+        let updatedSecond = parseInt(second) + index;
+        secondIncrement++;
+
+        const updatedTime = `${year}-${month}-${day} ${hour}:${minute}:${updatedSecond.toString().padStart(2, '0')}.${microsecond}`;
+
+        order.created_time = updatedTime;
+    }
+    
       const currentDate = new Date();
       const exchange_order_id = formatDate(currentDate);
       const cost = amount * price;
