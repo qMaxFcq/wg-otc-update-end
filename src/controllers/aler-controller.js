@@ -38,8 +38,9 @@ const db_test = mysql.createPool({
   exports.updateAlertActive = async (req, res) => {
     try {
         const data = req.body;
-        console.log(data)
+
         const alertMapping = {
+            'allAlert':1,
             'tenXLine': 5,
             'wanLine': 7,
             'patLine': 6,
@@ -50,14 +51,21 @@ const db_test = mysql.createPool({
         };
 
         const sqlUpdates = Object.entries(data)
-            .filter(([key, value]) => alertMapping[key])
             .map(([key, value]) => {
-                const isActive = value ? 1 : 0;
-                const id = alertMapping[key];
-                return db_test.query(`UPDATE customer_token SET is_active = ${isActive} WHERE id = ${id}`);
+                if (key === 'allAlert') {
+                    const id = alertMapping[key];
+                    return db_test.query('UPDATE price_alert SET is_active = ? WHERE id = ?', [value ? 1 : 0, id]);
+                } else {
+                    if (alertMapping[key]) {
+                        const isActive = value ? 1 : 0;
+                        const id = alertMapping[key];
+                        return db_test.query('UPDATE customer_token SET is_active = ? WHERE id = ?', [isActive, id]);
+                    }
+                }
             });
 
         const results = await Promise.all(sqlUpdates);
+
         res.status(200).json(results);
     } catch (error) {
         console.error(error);

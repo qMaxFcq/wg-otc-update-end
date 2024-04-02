@@ -101,8 +101,12 @@ exports.addNewOrderArray = async (req, res) => {
       const order_status = "COMPLETED";
       const convertedSide = side === 'deposit' ? 'BUY' : side === 'withdraw' ? 'SELL' : side;
       const convertedShop = shop_id === 1 ? 2 : shop_id === 3 ? 4 : shop_id;
-      const convertedSymbol = symbol === 2 ? "USDT_THB" : "";
-      
+      const convertedSymbol = symbol === 2 ? "USDT_THB" :
+                       symbol === 3 ? "BTC_THB" :
+                       symbol === 4 ? "ETH_THB" :
+                       symbol === 5 ? "BNB_THB" :
+                       "";
+
 
       orderValues.push([
         convertedShop,
@@ -119,6 +123,8 @@ exports.addNewOrderArray = async (req, res) => {
         req.user[0].username,
       ]);
     });
+
+    // console.log(orderValues)
 
     const sql =
       "INSERT INTO `order` (shop_id, side, symbol, price, amount, cost, customer, exchange_order_id, order_status, created_time, completed_at, add_by) VALUES ?";
