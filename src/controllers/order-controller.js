@@ -5,10 +5,15 @@ const moment = require('moment');
 const jwt = require("jsonwebtoken");
  
 const db_test = mysql.createPool({
+    // connectionLimit : 5,
+    // host: process.env.DB_HOST_NEW,
+    // user: process.env.DB_USERNAME_NEW,
+    // password: process.env.DB_PASSWORD_NEW,
+    // database: process.env.DB_NAME_NEW_2,
     connectionLimit : 5,
-    host: process.env.DB_HOST_NEW,
-    user: process.env.DB_USERNAME_NEW,
-    password: process.env.DB_PASSWORD_NEW,
+    host: process.env.DB_HOST_WG_PRO,
+    user: process.env.DB_USERNAME_WG_PRO,
+    password: process.env.DB_PASSWORD_WG_PRO,
     database: process.env.DB_NAME_NEW_2,
   });
 
