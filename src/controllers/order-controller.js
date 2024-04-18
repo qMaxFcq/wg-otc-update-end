@@ -159,6 +159,15 @@ exports.editOrder = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบคำสั่งที่ต้องการแก้ไข" });
     }
 
+    const datetimeObject = existingOrder[0]["completed_at"]; // DATETIME ในรูปแบบของวัตถุ
+    const datetimeString = JSON.stringify(datetimeObject);
+    const [date_list,time_list] = datetimeString.split('T')
+    const date = date_list.split('"')
+    const [summanry_tally_list] = await db_test.query(
+      "SELECT symbol_id, updated_at FROM summary_tally WHERE date = ?",
+      [date[1]]
+    );
+
     const { side, symbol, price, amount, customer, shop_id } = req.body;
     const cost = amount * price;
 
@@ -193,6 +202,27 @@ exports.editOrder = async (req, res) => {
 
       if (is_update){
         await db_test.query("DELETE FROM `tally` WHERE completed_at >= ?",[oldCompletedAt])
+
+        function decrementUpdatedAt(array) {
+          return array.map(item => {
+            const updatedTime = item.updated_at; 
+            const newTime = updatedTime - 1000; 
+            return { ...item, updated_at: new Date(newTime) }; 
+          });
+        }
+  
+        const decrementedData = decrementUpdatedAt(summanry_tally_list);
+
+        function updateDatabase(data) {
+          data.forEach(item => {
+            const sql = "UPDATE `summary_tally` SET updated_at=? WHERE symbol_id=?";
+            const values = [item.updated_at, item.symbol_id];
+            db_test.query(sql,values)
+          });
+        }
+        updateDatabase(decrementedData);
+        // console.log(summanry_tally_list)
+        // console.log(decrementedData);
       }
 
     }
