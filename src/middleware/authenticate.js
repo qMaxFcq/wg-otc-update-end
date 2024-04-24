@@ -30,7 +30,7 @@ module.exports = async (req, res, next) => {
       authToken = authHeader.split(" ")[1];
     }
 
-    const user = jwt.verify(authToken, process.env.JWT_SECRET_KEY);
+    const user = jwt.verify(authToken, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
     // const db = await connectToDatabase();
     const userDetail = await db_test.query(
       "SELECT * from user WHERE email = ?",
@@ -40,6 +40,10 @@ module.exports = async (req, res, next) => {
     req.user = userDetail[0];
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+
+      localStorage.removeItem('token');
+    }
     res.json({ message: "ไม่มี token นะจ่ะ" });
     next(err);
   } finally {

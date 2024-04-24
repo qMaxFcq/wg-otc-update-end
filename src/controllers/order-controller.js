@@ -1,22 +1,19 @@
 require("dotenv").config();
 const mysql = require("mysql2/promise");
-const moment = require('moment');
+const moment = require("moment");
 
-const jwt = require("jsonwebtoken");
- 
 const db_test = mysql.createPool({
-    // connectionLimit : 5,
-    // host: process.env.DB_HOST_NEW,
-    // user: process.env.DB_USERNAME_NEW,
-    // password: process.env.DB_PASSWORD_NEW,
-    // database: process.env.DB_NAME_NEW_2,
-    connectionLimit : 5,
-    host: process.env.DB_HOST_WG_PRO,
-    user: process.env.DB_USERNAME_WG_PRO,
-    password: process.env.DB_PASSWORD_WG_PRO,
-    database: process.env.DB_NAME_NEW_2,
-  });
-
+  // connectionLimit : 5,
+  // host: process.env.DB_HOST_NEW,
+  // user: process.env.DB_USERNAME_NEW,
+  // password: process.env.DB_PASSWORD_NEW,
+  // database: process.env.DB_NAME_NEW_2,
+  connectionLimit: 5,
+  host: process.env.DB_HOST_WG_PRO,
+  user: process.env.DB_USERNAME_WG_PRO,
+  password: process.env.DB_PASSWORD_WG_PRO,
+  database: process.env.DB_NAME_NEW_2,
+});
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -53,7 +50,7 @@ exports.addNewOrder = async (req, res) => {
       order_status,
       req.user[0].username,
     ]);
-    
+
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -64,58 +61,57 @@ exports.addNewOrder = async (req, res) => {
 };
 
 exports.addNewOrderArray = async (req, res) => {
-
   try {
     const orders = req.body;
     const orderValues = [];
-    const id_is_com = req.body[0].id
+    const id_is_com = req.body[0].id;
 
     let secondIncrement = 0;
 
-    orders.forEach((order,index) => {
-      const {
-        side,
-        symbol,
-        price,
-        amount,
-        shop_id,
-        customer,
-        created_time
-      } = order;
+    orders.forEach((order, index) => {
+      const { side, symbol, price, amount, shop_id, customer, created_time } =
+        order;
 
       if (index > 0) {
-        const [datePart, timePart] = created_time.split(' ');
-        const [year, month, day] = datePart.split('-');
-        const [hour, minute, second] = timePart.split(':');
-        const [secondPart, microsecond] = second.split('.');
+        const [datePart, timePart] = created_time.split(" ");
+        const [year, month, day] = datePart.split("-");
+        const [hour, minute, second] = timePart.split(":");
+        const [secondPart, microsecond] = second.split(".");
 
         // เพิ่มวินาที
         let updatedSecond = parseInt(second) + index;
         secondIncrement++;
 
-        const updatedTime = `${year}-${month}-${day} ${hour}:${minute}:${updatedSecond.toString().padStart(2, '0')}`;
+        const updatedTime = `${year}-${month}-${day} ${hour}:${minute}:${updatedSecond
+          .toString()
+          .padStart(2, "0")}`;
 
         order.created_time = updatedTime;
       }
 
       // console.log(order)
-    
+
       const currentDate = new Date();
       const exchange_order_id = formatDate(currentDate);
       const cost = amount * price;
       const order_status = "COMPLETED";
-      const convertedSide = side === 'deposit' ? 'BUY' : side === 'withdraw' ? 'SELL' : side;
+      const convertedSide =
+        side === "deposit" ? "BUY" : side === "withdraw" ? "SELL" : side;
       const convertedShop = shop_id === 1 ? 2 : shop_id === 3 ? 4 : shop_id;
-      const convertedSymbol = symbol === 2 ? "USDT_THB" :
-                       symbol === 3 ? "BTC_THB" :
-                       symbol === 4 ? "ETH_THB" :
-                       symbol === 5 ? "BNB_THB" :
-                       "";
-
+      const convertedSymbol =
+        symbol === 2
+          ? "USDT_THB"
+          : symbol === 3
+          ? "BTC_THB"
+          : symbol === 4
+          ? "ETH_THB"
+          : symbol === 5
+          ? "BNB_THB"
+          : "";
 
       orderValues.push([
         convertedShop,
-        convertedSide, 
+        convertedSide,
         convertedSymbol,
         price,
         amount,
@@ -136,14 +132,14 @@ exports.addNewOrderArray = async (req, res) => {
 
     const sql_update = `UPDATE withd_depo SET is_complete = 1 WHERE id = ${id_is_com}`;
     const [result] = await db_test.query(sql, [orderValues]);
-    const result_is_update_com = await db_test.query(sql_update)
+    const result_is_update_com = await db_test.query(sql_update);
 
     res.status(201).json({ message: "บันทึกข้อมูลสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
   } finally {
-    await db_test.releaseConnection()
+    await db_test.releaseConnection();
   }
 };
 
@@ -159,10 +155,10 @@ exports.editOrder = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบคำสั่งที่ต้องการแก้ไข" });
     }
 
-    const datetimeObject = existingOrder[0]["completed_at"]; // DATETIME ในรูปแบบของวัตถุ
+    const datetimeObject = existingOrder[0]["completed_at"];
     const datetimeString = JSON.stringify(datetimeObject);
-    const [date_list,time_list] = datetimeString.split('T')
-    const date = date_list.split('"')
+    const [date_list, time_list] = datetimeString.split("T");
+    const date = date_list.split('"');
     const [summanry_tally_list] = await db_test.query(
       "SELECT symbol_id, updated_at FROM summary_tally WHERE date = ?",
       [date[1]]
@@ -200,34 +196,41 @@ exports.editOrder = async (req, res) => {
         ]
       );
 
-      if (is_update){
-        await db_test.query("DELETE FROM `tally` WHERE completed_at >= ?",[oldCompletedAt])
+      if (is_update) {
+        await db_test.query("DELETE FROM `tally` WHERE completed_at >= ?", [
+          oldCompletedAt,
+        ]);
 
         function decrementUpdatedAt(array) {
-          return array.map(item => {
-            const updatedTime = item.updated_at; 
-            const newTime = updatedTime - 1000; 
-            return { ...item, updated_at: new Date(newTime) }; 
+          return array.map((item) => {
+            const updatedTime = item.updated_at;
+            const newTime = updatedTime - 1000;
+            return { ...item, updated_at: new Date(newTime) };
           });
         }
-  
+
         const decrementedData = decrementUpdatedAt(summanry_tally_list);
+        const decrementedDataString = JSON.stringify(
+          decrementedData[0]["updated_at"]
+        );
+        const [date_list, time_list] = decrementedDataString.split("T");
+        const date = date_list.split('"');
 
         function updateDatabase(data) {
-          data.forEach(item => {
-            const sql = "UPDATE `summary_tally` SET updated_at=? WHERE symbol_id=?";
-            const values = [item.updated_at, item.symbol_id];
-            db_test.query(sql,values)
+          data.forEach((item) => {
+            const sql =
+              "UPDATE `summary_tally` SET updated_at=? WHERE symbol_id=? AND date =?";
+            const values = [item.updated_at, item.symbol_id, date[1]];
+            db_test.query(sql, values);
           });
         }
         updateDatabase(decrementedData);
         // console.log(summanry_tally_list)
         // console.log(decrementedData);
       }
-
     }
 
-    await db_test.releaseConnection()
+    await db_test.releaseConnection();
     res.status(200).json({ message: "แก้ไขคำสั่งสำเร็จ" });
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
@@ -236,10 +239,9 @@ exports.editOrder = async (req, res) => {
 };
 
 exports.getOrderHistory = async (req, res) => {
-
   try {
     let selectedDate = req.query.selectedDate;
-    let selectedShopId = req.query.shopId
+    let selectedShopId = req.query.shopId;
     if (selectedDate) {
       selectedDate = selectedDate.split("/").reverse().join("-");
     } else {
@@ -247,25 +249,24 @@ exports.getOrderHistory = async (req, res) => {
     }
 
     if (selectedShopId) {
-      thisShopP2P = selectedShopId
+      thisShopP2P = selectedShopId;
     } else {
-      thisShopP2P = 2
+      thisShopP2P = 2;
     }
-
 
     const limit = 10;
     let page = parseInt(req.query.page) || 1;
     page = isNaN(page) || page < 1 ? 1 : page;
     const offset = (page - 1) * limit;
     const sqlQuery = `SELECT * FROM \`order\` WHERE DATE(created_time) = ? AND shop_id = ? AND customer != 'FEES' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`;
-    
+
     const queryParams = [selectedDate, selectedShopId];
     const [orderHistory] = await db_test.query(sqlQuery, queryParams);
-    
-    const historyOrderConthai = orderHistory.map(item => ({
+
+    const historyOrderConthai = orderHistory.map((item) => ({
       ...item,
-      created_time: moment(item.created_time).format('YYYY-MM-DD HH:mm:ss'),
-      completed_at: moment(item.completed_at).format('YYYY-MM-DD HH:mm:ss'),
+      created_time: moment(item.created_time).format("YYYY-MM-DD HH:mm:ss"),
+      completed_at: moment(item.completed_at).format("YYYY-MM-DD HH:mm:ss"),
     }));
 
     const [withdrawDepositHistory] = await db_test.query(
@@ -273,7 +274,7 @@ exports.getOrderHistory = async (req, res) => {
       [selectedDate]
     );
 
-    db_test.releaseConnection()
+    db_test.releaseConnection();
 
     // สร้างโครง
     const totalsByCoin = {
@@ -323,7 +324,7 @@ exports.getOrderHistory = async (req, res) => {
       error: "เกิดข้อผิดพลาดในการดึงข้อมูล getOrderHistory",
     });
   } finally {
-    db_test.releaseConnection()
+    db_test.releaseConnection();
   }
 };
 
@@ -334,17 +335,16 @@ exports.getHistoryWidDepo = async (req, res) => {
     );
 
     // แปลง completed_at เป็นเวลาไทย
-    const historyWidDepoWithThaiTime = historyWidDepo.map(item => ({
+    const historyWidDepoWithThaiTime = historyWidDepo.map((item) => ({
       ...item,
-      completed_at: moment(item.completed_at).format('YYYY-MM-DD HH:mm:ss'),
+      completed_at: moment(item.completed_at).format("YYYY-MM-DD HH:mm:ss"),
     }));
 
     res.status(200).json({ data: historyWidDepoWithThaiTime });
-
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await db_test.releaseConnection()
+    await db_test.releaseConnection();
   }
 };
