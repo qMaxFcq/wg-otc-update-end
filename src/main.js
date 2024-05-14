@@ -8,6 +8,7 @@ const Login = require("./routes/login");
 const Authenticate = require("./middleware/authenticate");
 const Alert = require("./routes/alert");
 const VolumePnl = require("./routes/volumepnl");
+const Arb = require("./routes/arb");
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -22,6 +23,7 @@ app.use("/", Login);
 app.use("/order", Authenticate, Order);
 app.use("/alertprice", Authenticate, Alert);
 app.use("/volumepnl", Authenticate, VolumePnl);
+app.use("/arb", Authenticate, Arb);
 
 const PORT = 3000;
 app.listen(PORT, () => {
