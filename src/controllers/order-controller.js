@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql2/promise");
 const moment = require("moment");
+const moment_thai = require("moment-timezone");
 
 const db_test = mysql.createPool({
   // connectionLimit : 5,
@@ -346,5 +347,54 @@ exports.getHistoryWidDepo = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await db_test.releaseConnection();
+  }
+};
+
+exports.exportData = async (req, res) => {
+  try {
+    const data = req.query;
+    const { startDate, endDate, symbolId } = data;
+    const symbolIds = symbolId.join(",");
+    const [orderData] = await db_test.query(
+      `
+      SELECT
+        o.created_time AS created_time,
+        o.shop_id AS shop_id,
+        o.side AS order_side,
+        o.price AS order_price,
+        o.amount AS order_amount,
+        o.cost AS order_cost,
+        o.customer AS order_customer,
+        o.fee AS order_fee,
+        t.symbol_id,
+        t.left_amount,
+        t.left_cost,
+        t.avg_price,
+        t.realized_pnl
+      FROM
+        \`tally\` t
+      JOIN
+        \`order\` o ON t.order_id = o.id
+      WHERE
+        t.completed_at BETWEEN ? AND ?
+        AND t.symbol_id IN (${symbolIds})
+    `,
+      [startDate, endDate]
+    );
+
+    const thaiOrderData = orderData.map((order) => ({
+      ...order,
+      created_time: moment_thai
+        .utc(order.created_time)
+        .tz("Asia/Bangkok")
+        .format("YYYY-MM-DD HH:mm:ss"),
+    }));
+
+    // console.log(thaiOrderData);
+
+    res.status(200).json({ success: true, orderData: thaiOrderData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
