@@ -332,7 +332,7 @@ exports.getOrderHistory = async (req, res) => {
 exports.getHistoryWidDepo = async (req, res) => {
   try {
     const [historyWidDepo] = await db_test.query(
-      `SELECT * FROM withd_depo WHERE is_complete = 0 AND DATE(completed_at) = CURDATE()`
+      `SELECT * FROM withd_depo WHERE is_complete = 0`
     );
 
     // แปลง completed_at เป็นเวลาไทย
